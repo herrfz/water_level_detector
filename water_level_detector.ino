@@ -24,7 +24,7 @@
 
 NewPing sonar(TRIG, ECHO, MAX_DISTANCE);
 
-bool calibration_mode = false; // TODO
+bool calibration_mode = false;
 
 int timer_counter; // LED timer counter
 
@@ -61,7 +61,7 @@ ISR(TIMER1_OVF_vect) {
 
 void setup() {
   // water sensor vs ultrasonic mode switch
-  pinMode(MODE_SWITCH, INPUT);
+  pinMode(MODE_SWITCH, INPUT_PULLUP);
 
   // water sensor input
   pinMode(WSENSOR, INPUT);
@@ -90,14 +90,15 @@ void setup() {
 }
 
 void trigger_calibration() {
-  calibration_mode = true;
+  static unsigned long last_interrupt_time = 0;
+  unsigned long interrupt_time = millis();
+  // if interrupt comes faster than x ms assume it's a bounce, ignore
+  if (interrupt_time - last_interrupt_time > LOOP_DELAY && digitalRead(MODE_SWITCH) == HIGH)
+    calibration_mode ^= true;
+  last_interrupt_time = interrupt_time;
 }
 
 void loop() {
-  pinMode(MODE_SWITCH, OUTPUT); // TODO: remove, just for testing
-  digitalWrite(MODE_SWITCH, HIGH); // TODO: remove, just for testing
-  pinMode(MODE_SWITCH, INPUT); // TODO: remove, just for testing
-
   // mode: water sensor; if water detected
   if (digitalRead(MODE_SWITCH) == LOW && digitalRead(WSENSOR) == LOW) {
     digitalWrite(RELAY, HIGH); // disconnect relay
